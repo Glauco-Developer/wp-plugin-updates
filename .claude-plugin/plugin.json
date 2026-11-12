@@ -1,6 +1,6 @@
 {
   "name": "wp-plugin-updates",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "license": "MIT",
   "description": "Monthly WordPress plugin updates workflow: local updates, Playwright validation, staging/production checks and reports.",
   "author": { "name": "Glauco-Developer" },

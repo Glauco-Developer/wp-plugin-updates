@@ -2,7 +2,38 @@
 
 Used by `wp-plugin-tester`. Always: use the dedicated Playwright suite (the kit's `playwright/` folder, plus this project's own specs in `plugin-updates/playwright-project/`); never reuse or mix with other suites in the project. Plain page checks can be added there freely; anything bigger needs approval. Always run smoke tests (homepage plus a few representative public pages; HTTP 200, `h1`, non-empty title, no obvious console/asset errors).
 
-Pages come from `plugin-updates/test-config.json` -> `plugins.<slug>.pages`. If missing and the recipe says "ask", return `NEEDS_INPUT` and the main agent saves the answer.
+Pages come from `plugin-updates/test-config.json` -> `plugins.<slug>.pages`. If missing and the recipe says "ask", return `NEEDS_INPUT` and the main agent saves the answer. The site's **key pages** (`testing.keyPages`, chosen by the developer in Setup) are always part of the smoke, SEO and before/after checks.
+
+## Before/after snapshot
+
+Answers "did the update make anything worse?" instead of "is anything wrong?". Read-only everywhere (GET page loads and screenshots only), so it is allowed on production.
+
+**What is recorded per page** (home, key pages, plugin pages): HTTP status, title, meta description, robots, canonical, `og:title`, whether there is an `h1`, number of forms, amount of visible text, JavaScript errors, broken assets (CSS/JS/images/fonts answering 4xx/5xx) and a full-page screenshot (lazy content is scrolled into view first).
+
+**Run it** from the skill's `playwright/` folder:
+
+```bash
+PLUGIN_UPDATES_PROJECT_DIR=<project root> PLUGIN_UPDATES_BASE_URL=<environment url> PLUGIN_UPDATES_MONTH=YYYY-MM \
+PLUGIN_UPDATES_ENV=<local|staging|production> PLUGIN_UPDATES_SNAPSHOT=before npx playwright test
+```
+
+- `before` runs only the snapshot and stores it in `plugin-updates/YYYY-MM/artifacts/baseline/<env>/` (`<page>.before.json` + `<page>.png`). Nothing is compared, nothing fails because of what it finds; pages already returning errors are noted as pre-existing.
+- `after` (same command with `PLUGIN_UPDATES_SNAPSHOT=after`) runs the comparison **and** the whole suite. Read `artifacts/playwright-summary-<env>-after.json`: `results` (Failed/Warning) and `preexisting`.
+
+**How it is judged** (only the change matters):
+
+| Change | Result |
+|---|---|
+| Page was 2xx/3xx, now 4xx/5xx; `h1` disappeared; fewer forms; visible text dropped by more than 40%; new broken assets | **Failed** (got worse) |
+| New JavaScript errors; title/description/robots/canonical/`og:title` changed; screenshot differs by more than `testing.visual.maxDiffPixelRatio` (default 2%) | **Warning** (diff image path in the summary) |
+| Same problem in before and after | **Pre-existing**: reported apart, never counted against the updates |
+| No before snapshot for the page | **Warning** "no baseline", normal checks still apply |
+
+A smoke or SEO test of the normal suite that fails on a page listed as pre-existing in the snapshot is reported as pre-existing too, not as a regression.
+
+**Noisy pages.** Sliders, cookie banners, dates, random "related posts" or ads change on every load. Add their CSS selectors to `testing.visual.mask` (they are blacked out in both screenshots), or raise `maxDiffPixelRatio` for that project. Set `testing.visual.enabled` to `false` to keep the data comparison without screenshots. Suggest a mask to the developer (one question) when the same page shows a visual change on two runs in a row without any real difference.
+
+Staging behind Basic Auth: the terminal run needs `PLUGIN_UPDATES_BASIC_AUTH_USER` / `PLUGIN_UPDATES_BASIC_AUTH_PASSWORD` exported by the developer (see below); without them the snapshot is Not Run.
 
 | Plugin | Pages | Tests |
 |---|---|---|

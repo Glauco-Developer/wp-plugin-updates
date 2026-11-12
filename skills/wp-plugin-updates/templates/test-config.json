@@ -30,7 +30,23 @@
     }
   },
   "plugins": {},
+  "vip": {
+    "detected": false,
+    "mcp": false,
+    "appId": null,
+    "environments": {
+      "staging": null,
+      "production": null
+    }
+  },
   "testing": {
+    "keyPages": [],
+    "visual": {
+      "enabled": true,
+      "fullPage": true,
+      "maxDiffPixelRatio": 0.02,
+      "mask": []
+    },
     "languages": [],
     "framework": "playwright",
     "productionReadOnly": true,
