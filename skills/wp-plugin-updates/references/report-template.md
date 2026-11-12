@@ -66,6 +66,41 @@ Results: Dispatch Confirmed by the plugin (Passed, inbox delivery not checked), 
 | Test | URL | Result | Notes |
 |---|---|---|---|
 
+### Before/After Comparison
+
+Each environment was checked right before its change and again after it. Only what got worse counts against the updates.
+
+| Environment | Before snapshot | Pages | Got worse | Already there before | Visual changes | Result |
+|---|---|---|---|---|---|---|
+| Local | YYYY-MM-DD HH:MM | | | | | |
+| Staging | | | | | | |
+| Production | | | | | | |
+
+Got worse (details):
+
+- None / `page`: what changed (evidence)
+
+Already there before (not caused by the updates):
+
+- None / `page`: what was already broken
+
+Visual changes are listed with the diff image path under `plugin-updates/YYYY-MM/artifacts/` (not committed). A visual change is a Warning until the developer confirms it is expected or a problem.
+
+### VIP Platform Health
+
+Only on WordPress VIP projects with the VIP MCP connected; otherwise write `Not Run (not a VIP project)` or `Not Run (VIP MCP not connected)`.
+
+| Environment | Check | Before | After | Result |
+|---|---|---|---|---|
+| Staging | Deployment (commit) | | | |
+| Staging | Plugin versions on the server | | | |
+| Staging | PHP errors (new signatures) | | | |
+| Staging | Slow queries (new) | | | |
+| Staging | Response time P95 / 5xx | | | |
+| Production | (same rows) | | | |
+
+Production restore point: YYYY-MM-DD HH:MM / Skipped.
+
 ### Outstanding Issues
 
 - None / list
@@ -107,5 +142,5 @@ Generated at Finish. Written for non-technical readers (clients, project manager
 | Staging | Passed / Passed with warnings / Not run |
 | Production | Passed / Passed with warnings / Not run |
 
-<One or two sentences: overall assessment and any recommended follow-up.>
+<One or two sentences: overall assessment and any recommended follow-up. When before/after snapshots were taken, say in plain words that the site was compared before and after each deploy and whether anything got worse (for example: "Staging and production were compared before and after the deploy; no new problems were found. One page already had a broken image before the update.").>
 ```

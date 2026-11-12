@@ -1,8 +1,8 @@
 // Site-level checks that apply to any WordPress project: SEO basics, sitemaps, 404, login redirect, static assets.
 const { test, expect } = require('@playwright/test');
-const { withPrefixes, allPluginPages, metaContent, warn, testing } = require('./lib/site');
+const { testPages, metaContent, warn, testing } = require('./lib/site');
 
-const pages = [...new Set(withPrefixes(['/', ...allPluginPages()]))];
+const pages = testPages();
 
 for (const path of pages) {
   test(`seo basics ${path}`, async ({ page }, info) => {

@@ -22,6 +22,9 @@ This plugin gives you the careful version, without the hours.
 - **Tests before anything ships.** A dedicated Playwright suite plus per-plugin checks (forms, search and filters, SEO metadata, language switching, PHP errors in the debug log).
 - **Form checks for the plugin your site actually uses.** It detects Gravity Forms, Contact Form 7, WPForms, Ninja Forms, Fluent Forms, Formidable and Forminator, finds the form pages, and tests rendering and required fields. With your approval, it submits a marked test entry on staging and checks the plugin's own record of the notification. Opening a mailbox (Inbox vs Spam/Junk) happens only if you ask.
 - **A local save test.** It creates a marked draft on your *local* site, saves it, fills ACF and Yoast fields, checks for errors, and deletes it. Updates that break saving are caught before anything is committed. It refuses to run on anything that is not clearly local. On staging the same test is opt-in each run, draft only, done through your own Chrome, and the draft is deleted afterwards.
+- **Before and after every deploy.** Right before each change (local updates, staging deploy, production deploy) it takes a snapshot of your key pages: status, SEO tags, headings, forms, JavaScript errors, broken assets and a full-page screenshot. After the change it takes it again and compares. Only what **got worse** counts against the updates; anything that was already broken is reported as *pre-existing*, so old problems are never blamed on the plugins. Visual changes come with a diff image.
+- **You choose the key pages.** On the first run it suggests the pages that matter (home, main menu items, a form page, a post) and you accept them or paste your own URLs.
+- **WordPress VIP aware (optional).** On VIP sites with the VIP MCP connected it also confirms the deploy really shipped the updates commit, reads the real plugin versions on staging and production, and compares PHP errors, slow queries, response time and 5xx before and after the deploy. Read-only, plus two opt-in actions (a production restore point and a cache purge of the tested pages). It never deploys or rolls back.
 - **A clean commit** that lists only the updated plugins and their versions.
 - **Staging and production validation** after you deploy. Production is read-only by default.
 - **Two reports**: a full technical report and a one-page summary for stakeholders.
@@ -40,10 +43,12 @@ This plugin gives you the careful version, without the hours.
  4. TEST LOCAL   Playwright suite + plugin-specific checks on your local site
  5. COMMIT       One commit, only the updated plugins. You approve it. Pushes the branch
                  (plain push, never force). No PR, no merge
- 6. STAGING      YOU deploy. The agent verifies the deployment landed,
-                 then tests staging (using your own logged-in Chrome session)
- 7. PRODUCTION   YOU deploy. The agent runs read-only checks and,
-                 only if you say yes, an optional form submission test
+ 6. STAGING      Before snapshot of staging. YOU deploy. The agent verifies the
+                 deployment landed, tests staging (using your own logged-in Chrome
+                 session) and compares it with the before snapshot
+ 7. PRODUCTION   Before snapshot of production. YOU deploy. The agent runs read-only
+                 checks, compares with the before snapshot and, only if you say yes,
+                 an optional form submission test
  8. REPORT       Full report + stakeholder summary
 ```
 
@@ -68,6 +73,44 @@ Results use a fixed vocabulary (Passed, Failed, Warning, Not Run, Not Verified, 
 |---|---|---|
 | `plugin-updates-full.md` | You and your team | Every phase, every plugin, test results per environment, notes, outstanding issues |
 | `plugin-updates-summary.md` | Clients and managers | Result, updated plugins (previous to new version), what needs attention, validation outcome per environment. Plain language, one page |
+
+## WordPress VIP (optional)
+
+On sites hosted on WordPress VIP the agent can use WordPress VIP's own MCP server (*Secure MCP*, toolset *VIP MCP*) to see the platform: deployments, plugin versions on the server, PHP logs, slow queries and metrics. Without it everything still works; the report just says the platform checks were not run.
+
+One-time setup:
+
+1. An Org admin activates **Secure MCP** in the VIP Dashboard (Integrations) and enables the **VIP MCP** toolset for the application's environments. It is off by default.
+2. Connect it in Claude Code (a browser window opens to authorize with your VIP Dashboard account):
+
+```bash
+claude mcp add --scope user --transport http vip-platform https://api.wpvip.com/mcp
+```
+
+The agent acts with **your** VIP Dashboard permissions. It is limited by its instructions to read-only tools plus two opt-in actions, but the token can do whatever your role allows. We recommend also blocking the destructive tools in your own Claude Code settings (`~/.claude/settings.json`), so nothing can call them by mistake:
+
+```json
+{
+  "permissions": {
+    "deny": [
+      "mcp__vip-platform__environment_rollback",
+      "mcp__vip-platform__environment_retire",
+      "mcp__vip-platform__environment_create_child",
+      "mcp__vip-platform__environment_deploy_start_custom",
+      "mcp__vip-platform__environment_sync",
+      "mcp__vip-platform__environment_sql_import_start",
+      "mcp__vip-platform__environment_domain_remove",
+      "mcp__vip-platform__environment_domain_set_primary",
+      "mcp__vip-platform__environment_update_software_versions",
+      "mcp__vip-platform__organization_remove_user",
+      "mcp__vip-platform__organization_invite_user",
+      "mcp__vip-platform__execute"
+    ]
+  }
+}
+```
+
+(The prefix `mcp__vip-platform__` matches the server name used in the command above.) VIP also asks for a browser confirmation (step-up) before high-impact actions, and every MCP call is listed in the VIP Audit Log under your name.
 
 ## Install
 
@@ -97,6 +140,9 @@ Most of the run is automatic and needs nothing from you but a yes. Staging check
 | Staging admin checks and form tests | Chrome open with the **Claude in Chrome** extension installed and signed in, the staging site open in a tab and logged in to wp-admin (including Basic Auth, if the site has it) |
 | Mailbox check (optional) | Your webmail open and logged in, in another tab, preferably a dedicated test mailbox |
 | Production | Nothing. Public read-only checks. The optional form test uses the same Chrome session |
+| VIP platform checks (optional) | The VIP MCP connected once in Claude Code (see *WordPress VIP*) |
+
+The before/after snapshot runs from the terminal, not from your Chrome. If staging is behind Basic Auth, export `PLUGIN_UPDATES_BASIC_AUTH_USER` and `PLUGIN_UPDATES_BASIC_AUTH_PASSWORD` in your shell before the run; otherwise the staging snapshot is skipped (the rest still runs).
 
 The agent never asks for or types your passwords, never bypasses MFA or CAPTCHA, and only uses the tabs you opened. If you prefer not to open Chrome, choose "Public tests only": the checks that need a login are listed as Manual Verification Required instead.
 

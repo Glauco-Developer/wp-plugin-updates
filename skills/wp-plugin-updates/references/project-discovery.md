@@ -27,6 +27,7 @@ Discover first, then ask only for what could not be found, **one question at a t
 4. Staging and production URLs: asked once in Setup, skippable.
 5. Deploys are always done by the developer; never ask how, just say that the developer deploys. After a deploy, remind the developer to purge caches. If the server runs automatic plugin updates, tell the developer, since server-side updates can cause version drift.
 6. If the plugin updates would not show up in a Git diff (plugins not tracked in Git), stop and ask how deploys work.
+7. WordPress VIP: a `vip-config/` or `client-mu-plugins/` folder at the repository root means a VIP codebase (`client-mu-plugins/` is already protected by rule 3). Optional platform checks through the VIP MCP are described in `references/vip-platform.md`; record the result under `vip` in the config.
 
 ## Required fields in `project`
 

@@ -1,9 +1,9 @@
-// Generic smoke test: home page plus every page listed in plugin-updates/test-config.json, for each configured language prefix.
+// Generic smoke test: home page, the key pages (testing.keyPages) and every plugin page in plugin-updates/test-config.json, for each configured language prefix.
 // Read-only: loads pages, never submits forms. Form submissions are done by the agent with explicit approval.
 const { test, expect } = require('@playwright/test');
-const { withPrefixes, allPluginPages, warn } = require('./lib/site');
+const { testPages, warn } = require('./lib/site');
 
-const pages = [...new Set(withPrefixes(['/', ...allPluginPages()]))];
+const pages = testPages();
 
 for (const path of pages) {
   test(`smoke ${path}`, async ({ page }, info) => {
